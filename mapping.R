@@ -32,6 +32,7 @@ for (i in 1:length(con_geom)) {
 xyu = unique(xye)
 
 # triangulate...
+library(tripack)
 trimesh = tri.mesh(xyu[,1], xyu[,2])
 triang  = triangles(trimesh)
 # generate a set of x,y,z points based on these triangles in sequence...
@@ -40,15 +41,18 @@ triamp = t(matrix(t(trianp), nrow=3))
 dim(triamp)
 head(triamp,1000)
 
+triamp <- read.csv("tri/triangles.csv")
 library(rgl)
 triangles3d(triamp[,1], triamp[,2], triamp[,3], col="green")
 
+library(proj4)
 src.proj = '+proj=tmerc +lat_0=0 +lon_0=173 +k=0.9996 +x_0=1600000 +y_0=10000000 +ellps=WGS84'
 dst.proj = '+proj=longlat  +datum=WGS84 +no_defs'
 latlong = project(triamp[,1:2], src.proj, inverse=TRUE, ellps.default = NA)
-xlim = range(latlong[,1])
-ylim = range(latlong[,2])
+xlim = range(latlong$x)
+ylim = range(latlong$y)
 
+library(RgoogleMaps)
 map = GetMap.bbox(xlim, ylim, maptype="satellite", verbose=TRUE, SCALE=4)
 
 # grab the subset of the map we need to map to our coords
@@ -181,8 +185,10 @@ x2 = (xlim[2] - map_ll[2]) / (map_ur[2] - map_ll[2])
 y1 = (ylim[1] - map_ll[1]) / (map_ur[1] - map_ll[1])
 y2 = (ylim[2] - map_ll[1]) / (map_ur[1] - map_ll[1])
 
-texcoords.x = (latlong[,1] - map_ll[2]) / (map_ur[2] - map_ll[2])
-texcoords.y = (latlong[,2] - map_ll[1]) / (map_ur[1] - map_ll[1])
+texcoords.x = (latlong$x - map_ll[2]) / (map_ur[2] - map_ll[2])
+texcoords.y = (latlong$y - map_ll[1]) / (map_ur[1] - map_ll[1])
 
+triamp = read.csv("tri/triangles.csv")
+library(rgl)
 triangles3d(triamp[,1], triamp[,2], triamp[,3], lwd=0.01, col="white", texture="map.png", textype="rgb",
-            texcoords=cbind(texcoords.x, texcoords.y), shininess = 20)
+            texcoords=triamp[,4:5], shininess = 20)
